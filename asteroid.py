@@ -1,11 +1,12 @@
 import pygame
 import random
 from circleshape import CircleShape
-from constants import ASTEROID_MIN_RADIUS
+from constants import ASTEROID_MIN_RADIUS, ASTEROID_SPEED
 
 class Asteroid(CircleShape):
     def __init__(self, x, y, radius):
         super().__init__(x, y, radius)
+        self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1)).normalize() * ASTEROID_SPEED
 
     def draw(self, screen):
         pygame.draw.circle(screen, "white", self.position, self.radius, 2)
@@ -14,33 +15,16 @@ class Asteroid(CircleShape):
         self.position += self.velocity * dt
 
     def split(self):
-        self.kill()  # Always destroy the current asteroid
-
+        self.kill()
         if self.radius <= ASTEROID_MIN_RADIUS:
-            return  # Small asteroid, no splitting
+            return []
 
-        # Generate random angle for splitting
-        random_angle = random.uniform(20, 50)
+        new_radius = self.radius // 2
+        new_asteroids = []
 
-        # Create two new velocity vectors
-        new_velocity1 = self.velocity.rotate(random_angle)
-        new_velocity2 = self.velocity.rotate(-random_angle)
+        for _ in range(2):
+            new_asteroid = Asteroid(self.position.x, self.position.y, new_radius)
+            new_asteroid.velocity = self.velocity.rotate(random.uniform(-45, 45)) * 1.2
+            new_asteroids.append(new_asteroid)
 
-        # Calculate new radius
-        new_radius = self.radius - ASTEROID_MIN_RADIUS
-
-        # Create two new asteroids
-        new_asteroid1 = Asteroid(self.position.x, self.position.y, new_radius)
-        new_asteroid2 = Asteroid(self.position.x, self.position.y, new_radius)
-
-        # Set velocities for new asteroids (1.2 times faster)
-        new_asteroid1.velocity = new_velocity1 * 1.2
-        new_asteroid2.velocity = new_velocity2 * 1.2
-
-        # Add new asteroids to the game
-        if hasattr(self, 'containers'):
-            for container in self.containers:
-                container.add(new_asteroid1)
-                container.add(new_asteroid2)
-
-        return [new_asteroid1, new_asteroid2]
+        return new_asteroids
